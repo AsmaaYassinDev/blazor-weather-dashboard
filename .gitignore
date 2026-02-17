@@ -34,3 +34,16 @@ Thumbs.db
 # Secrets & Environments
 # =========================
 .env
+
+# =========================
+# App Specific Outputs
+# =========================
+wwwroot/css/site.css
+wwwroot/css/bootstrap/
+
+# =========================
+# Local Secrets & Settings
+# =========================
+appsettings.json
+!appsettings.Development.json
+secrets.json
