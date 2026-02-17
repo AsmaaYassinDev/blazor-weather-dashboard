@@ -1,0 +1,13 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Navigate to /weather on first render only
+            NavigationManager.NavigateTo("/weather", forceLoad: true);
+        }
+    }
+}

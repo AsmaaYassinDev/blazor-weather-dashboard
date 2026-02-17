@@ -1,0 +1,6 @@
+﻿.git
+.vs
+bin/
+obj/
+node_modules/
+wwwroot/css/site.css

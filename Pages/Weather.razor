@@ -1,0 +1,185 @@
+﻿@page "/weather"
+
+<div class="@(darkMode ? "dark" : "")">
+    <div class="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 p-6 transition-colors duration-300 font-sans">
+
+        <div class="max-w-6xl mx-auto">
+
+            <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
+
+                <div class="relative w-full max-w-2xl flex items-center gap-2 z-50">
+                    <div class="relative w-full">
+                        <input @bind="city"
+                               @oninput="OnCityInput"
+                               @onkeydown="OnKeyDown"
+                               class="w-full py-3 px-6 text-lg border-2 border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 focus:border-blue-500 focus:outline-none transition-colors shadow-sm"
+                               placeholder="Search for a city..."
+                               autocomplete="off" />
+
+                        <div class="absolute right-2 top-2 flex gap-2">
+                            <button @onclick="GetLocationWeather" disabled="@loading" title="Use My Location"
+                                    class="p-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-full transition-colors text-xl">
+                                📍
+                            </button>
+                            <button @onclick="GetWeather" disabled="@loading"
+                                    class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full transition-colors">
+                                Search
+                            </button>
+                        </div>
+
+                        @if (cityResults.Any())
+                        {
+                            <ul class="absolute top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
+                                @for (int i = 0; i < cityResults.Count; i++)
+                                {
+                                    var c = cityResults[i];
+                                    var currentIndex = i;
+                                    <li class="px-5 py-3 cursor-pointer border-b border-slate-100 dark:border-slate-700 last:border-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors @((currentIndex == selectedIndex) ? "bg-blue-600 text-white" : "")"
+                                        @onclick="@(() => SelectCity($"{c.Name}, {c.Country}"))">
+                                        @c.Name (@c.Country)
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+
+                <div class="flex gap-4 shrink-0">
+                    <div class="flex bg-white dark:bg-slate-800 rounded-full shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                        <button class="px-4 py-2 font-semibold transition-colors @(isCelsius ? "bg-blue-600 text-white" : "hover:bg-slate-50 dark:hover:bg-slate-700")"
+                                @onclick="() => SetUnit(true)">
+                            °C
+                        </button>
+                        <button class="px-4 py-2 font-semibold transition-colors @(!isCelsius ? "bg-blue-600 text-white" : "hover:bg-slate-50 dark:hover:bg-slate-700")"
+                                @onclick="() => SetUnit(false)">
+                            °F
+                        </button>
+                    </div>
+
+                    <button class="px-5 py-2 font-semibold bg-white dark:bg-slate-800 rounded-full shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                            @onclick="ToggleDarkMode">
+                        @(darkMode ? "☀️ Light Mode" : "🌙 Dark Mode")
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                <div class="lg:col-span-2">
+                    @if (loading)
+                    {
+                        <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-slate-100 dark:border-slate-700 text-center text-slate-500 italic">Fetching weather data...</div>
+                    }
+                    else if (searched && weather == null)
+                    {
+                        <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-red-100 dark:border-red-900 text-center text-red-500 font-semibold">City not found or API error.</div>
+                    }
+                    else if (weather != null)
+                    {
+                        <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-slate-100 dark:border-slate-700">
+                            <h2 class="text-3xl font-bold mb-6">@weather.City</h2>
+
+                            <div class="flex justify-between items-center mb-10">
+                                <div>
+                                    <p class="text-7xl font-extrabold text-slate-800 dark:text-white leading-none">@Math.Round(weather.Temperature)@(isCelsius ? "°C" : "°F")</p>
+                                    <p class="text-xl text-slate-500 dark:text-slate-400 capitalize mt-2">@weather.Description</p>
+                                </div>
+                                <img src="@($"https://openweathermap.org/img/wn/{weather.Icon}@4x.png")"
+                                     class="w-40 h-40 object-contain drop-shadow-xl"
+                                     alt="@weather.Description"
+                                     onerror="this.onerror=null;this.src='/images/default-weather.png';" />
+                            </div>
+
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-5 rounded-2xl text-center">
+                                    <h5 class="text-sm text-slate-500 dark:text-slate-400 font-medium mb-1">Feels Like</h5>
+                                    <p class="text-2xl font-bold">@Math.Round(weather.FeelsLike)@(isCelsius ? "°C" : "°F")</p>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-5 rounded-2xl text-center">
+                                    <h5 class="text-sm text-slate-500 dark:text-slate-400 font-medium mb-1">Humidity</h5>
+                                    <p class="text-2xl font-bold">@weather.Humidity%</p>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-5 rounded-2xl text-center">
+                                    <h5 class="text-sm text-slate-500 dark:text-slate-400 font-medium mb-1">Wind Speed</h5>
+                                    <p class="text-2xl font-bold">@(isCelsius? Math.Round(weather.WindSpeed * 3.6, 1) + " km/h" : Math.Round(weather.WindSpeed, 1) + " mph")</p>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-5 rounded-2xl text-center">
+                                    <h5 class="text-sm text-slate-500 dark:text-slate-400 font-medium mb-1">Sunrise</h5>
+                                    <p class="text-2xl font-bold">@weather.Sunrise</p>
+                                </div>
+                                <div class="bg-slate-50 dark:bg-slate-700/50 p-5 rounded-2xl text-center">
+                                    <h5 class="text-sm text-slate-500 dark:text-slate-400 font-medium mb-1">Sunset</h5>
+                                    <p class="text-2xl font-bold">@weather.Sunset</p>
+                                </div>
+                            </div>
+
+                            @if (forecasts != null && forecasts.Any())
+                            {
+                                <h4 class="text-lg font-bold mb-4">5-Day Forecast</h4>
+                                <div class="flex gap-4 overflow-x-auto pb-2">
+                                    @foreach (var day in forecasts)
+                                    {
+                                        <div class="flex-1 min-w-[90px] bg-slate-50 dark:bg-slate-700/50 p-4 rounded-2xl flex flex-col items-center hover:-translate-y-1 transition-transform" title="@day.Description">
+                                            <p class="font-bold text-slate-500 dark:text-slate-400 uppercase text-sm">@day.Date.ToString("ddd")</p>
+                                            <img src="@($"https://openweathermap.org/img/wn/{day.Icon}@2x.png")" class="w-16 h-16 drop-shadow-md" alt="@day.Description" />
+                                            <p class="font-bold text-xl">@Math.Round(day.Temp)°</p>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="bg-white dark:bg-slate-800 rounded-3xl p-16 shadow-lg border border-slate-100 dark:border-slate-700 text-center text-slate-500 dark:text-slate-400">
+                            <h2 class="text-2xl font-bold mb-2">Welcome to WeatherApp</h2>
+                            <p>Search for a city above to see current conditions and metrics.</p>
+                        </div>
+                    }
+                </div>
+
+                <div class="lg:col-span-1">
+                    <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-slate-100 dark:border-slate-700">
+
+                        <div class="flex justify-between items-center mb-6">
+                            <h4 class="text-xl font-bold">Recent Searches</h4>
+                            @if (lastSearched.Any())
+                            {
+                                <button class="text-red-500 hover:text-red-600 hover:underline font-semibold text-sm transition-colors" @onclick="ClearHistory">Clear</button>
+                            }
+                        </div>
+
+                        @if (lastSearched.Any())
+                        {
+                            <div class="flex flex-col gap-3">
+                                @foreach (var s in lastSearched)
+                                {
+                                    <button class="w-full text-left bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-600 p-4 rounded-xl font-medium transition-all hover:translate-x-1 flex items-center gap-2"
+                                            @onclick="() => SearchFromHistory(s)">
+
+                                        @* Conditionally show the icon based on the string content *@
+                                        @if (s.EndsWith("GPS"))
+                                        {
+                                            <span>📍</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-slate-400 dark:text-slate-500">🕒</span> @* Standard history clock icon *@
+                                        }
+
+                                        <span>@s</span>
+                                    </button>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-slate-500 dark:text-slate-400 text-sm">No recent searches.</p>
+                        }
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

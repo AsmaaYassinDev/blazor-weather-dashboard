@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "tailwindcss": "^4.1.18"
+  },
+  "scripts": {
+    "css:watch": "npx @tailwindcss/cli -i ./wwwroot/css/app.css -o ./wwwroot/css/site.css --watch",
+    "css:build": "npx @tailwindcss/cli -i ./wwwroot/css/app.css -o ./wwwroot/css/site.css --minify"
+  }
+}
