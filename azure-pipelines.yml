@@ -1,0 +1,36 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  buildConfiguration: 'Release'
+
+steps:
+# 1. Install the .NET 10 SDK
+- task: UseDotNet@2
+  displayName: 'Install .NET 10.0 SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '10.x'
+
+# 2. Restore all project dependencies
+- script: dotnet restore
+  displayName: 'Restore NuGet Packages'
+
+# 3. Build the project
+- script: dotnet build --configuration $(buildConfiguration) --no-restore
+  displayName: 'Build Blazor App'
+
+# 4. Publish the output (creates the deployable wwwroot folder for Blazor)
+- script: dotnet publish --configuration $(buildConfiguration) --no-build -o $(Build.ArtifactStagingDirectory)
+  displayName: 'Publish WebAssembly Files'
+
+# 5. Save the published files so they can be deployed later
+- task: PublishBuildArtifacts@1
+  displayName: 'Upload Build Artifacts'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'blazor-weather-app-drop'
+    publishLocation: 'Container'
