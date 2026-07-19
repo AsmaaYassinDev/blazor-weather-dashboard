@@ -1,4 +1,3 @@
-// GitHub-Azure Pipeline Link: https://github.com/your-username/your-repo/actions (Replace with your actual link)
 
 # WeatherApp
 
